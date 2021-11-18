@@ -1,0 +1,27 @@
+if TARGET_GE110PRO
+
+config SYS_BOARD
+	default "ge110pro"
+
+config SYS_VENDOR
+	default "ADVA"
+
+config SYS_SOC
+	default "ls102xa"
+
+config SYS_CONFIG_NAME
+	default "ge110pro"
+
+config SKDIFILE
+	string
+	default "fsp150.skdi"
+
+config FDTFILE
+	string
+	default "ge110pro.dtb"
+
+source "board/freescale/common/Kconfig"
+source "board/ADVA/common/Kconfig"
+
+
+endif

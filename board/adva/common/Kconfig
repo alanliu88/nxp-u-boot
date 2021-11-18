@@ -1,0 +1,17 @@
+config ADVA_COMMON_LIB
+	bool  "adva common library"
+	default y
+
+config ADVA_DS31407
+	bool "adva ds31407 debug command"
+	default n
+
+config ADVA_DS31407_CS
+	int "ds31407 spi chicp select"
+	depends on ADVA_DS31407
+
+config ADVA_CMD_BOOTUBI
+	bool "bootubi command boot"
+	help 
+		a wrapper command to ubifs and bootm, which is used to boot from adva nand
+	default y
