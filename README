@@ -3,6 +3,13 @@
 # (C) Copyright 2000 - 2013
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 
+github use token to authenticate repo operation:
+1. generate token over the web management page up right corner: settings -> developer setting -> generate token
+   ref: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+2. use github cli tool gh,  
+   download tool: https://github.com/cli/cli/releases/tag/v2.2.0
+   https://cli.github.com/manual/gh_auth_login
+
 Summary:
 ========
 
