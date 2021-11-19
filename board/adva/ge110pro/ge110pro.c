@@ -34,9 +34,20 @@
 #include <fsl_qe.h>
 #endif
 #include <fsl_validate.h>
+#include <dm/device.h>
+#include <spi.h>
+#include <miiphy.h>
+#include <fdt_support.h>
 
+#include "../common/cpld.h"
+#include "../common/phyinv.h"
+#include "../common/board_phyinv.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+enum { POWER = 0, WARM = 1, WDOG = 2, ABNORMAL = 3, 
+		COLD = 4, MACSEC_SWITCH = 5, BUTTON = 6, DEFAULTDB = 7};
+
 
 #define VERSION_MASK		0x00FF
 #define BANK_MASK		0x0001
@@ -68,14 +79,122 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SOFT_MUX_ON_CAN3_USB2	0x8
 #define SOFT_MUX_ON_QE_LCD	0x10
 
+/******************************************************************************
+ * Display the board name
+ * GE114Pro, GE114Pro MACsec, GE114SHPro, GE114SHPro MACsec, GE112Pro, Mini CPE, etc
+ *****************************************************************************/
+#define SIZEOF_UNITNAME sizeof(((PhyInv_t_page0*)(0))->unitName)
+#define SIZEOF_PARTNUM sizeof(((PhyInv_t_page0*)(0))->partNum)
 int checkboard(void)
 {
-	puts("Board: LS1021ATWR\n");
-#if !defined(CONFIG_QSPI_BOOT) && !defined(CONFIG_SD_BOOT_QSPI)
+    struct udevice *i2cdev;
+    char unitName[SIZEOF_UNITNAME + 1];
+#ifdef CONFIG_BOARD_TYPES
+    char partNumber[SIZEOF_PARTNUM + 1];
+#endif
+    uint offset;
+    char testEndian[]="\x11\x22\x33\x44";
+
+    printf("%s Endian Mode\n",(((*((unsigned long*)testEndian))==0x11223344)?"Big":"Little"));
+    printf("TestEndian is %x [%x][%x][%x][%x]\n",*((unsigned long*)testEndian),testEndian[0],testEndian[1],testEndian[2],testEndian[3]);
+
+    i2cdev = get_i2c_inv_dev(0);
+    if (i2cdev == 0) {
+        return 0;
+    }
+
+    offset = offsetof (PhyInv_t_page0, unitName);
+    if ((dm_i2c_read (i2cdev,offset,(u8*) unitName, SIZEOF_UNITNAME) == 0) &&
+        (unitName[0] != 0xff))
+    {
+        unitName[SIZEOF_UNITNAME] = '\0';
+        printf ("Board: %s\n", unitName);
+    }
+    else
+    {
+        printf ("Board: %s\n", "unknown");
+    }
+    
+#ifdef CONFIG_BOARD_TYPES
+    offset = offsetof (PhyInv_t_page0, partNum);
+    if ((dm_i2c_read(i2cdev, offset, (u8*)partNumber, SIZEOF_PARTNUM) == 0) && 
+        (partNumber[0] != 0xff))
+    {
+        if ((strncmp(partNumber, "1078904720", 10) == 0) ||
+            (strncmp(partNumber, "1078904721", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE114_PRO;
+        }
+        else if((strncmp(partNumber, "1078904722", 10) == 0) ||
+                (strncmp(partNumber, "1078904723", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE114_PRO_MACSEC;
+        }
+        else if(strncmp(partNumber, "1078904724", 10) == 0)
+        {
+            gd->board_type = ADVA_BOARD_GE114SH_PRO;
+        }
+        else if(strncmp(partNumber, "1078904725", 10) == 0)
+        {
+            gd->board_type = ADVA_BOARD_GE114SH_PRO_MACSEC;
+        }
+        else if((strncmp(partNumber, "1078904701", 10) == 0) ||
+                (strncmp(partNumber, "1078904702", 10) == 0) ||
+                (strncmp(partNumber, "1078904703", 10) == 0) ||
+                (strncmp(partNumber, "1078904705", 10) == 0) ||
+                (strncmp(partNumber, "1078904840", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE112_PRO;
+        }
+        else if((strncmp(partNumber, "1013904704", 10) == 0) ||
+                    (strncmp(partNumber, "1078904704", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_MINI_CPE;
+        }
+        else if((strncmp(partNumber, "1078904754", 10) == 0) ||
+                (strncmp(partNumber, "1078904755", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE114CSH_PRO_VM;
+        }
+        else if(strncmp(partNumber, "1078904757", 10) == 0)
+        {
+            gd->board_type = ADVA_BOARD_GE114SH_PRO_VM;
+        }
+        else if((strncmp(partNumber, "1078904752", 10) == 0) ||
+                (strncmp(partNumber, "1078904753", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE114CH_PRO_VM;
+        }
+        else if((strncmp(partNumber, "1078904750", 10) == 0) ||
+                (strncmp(partNumber, "1078904751", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE114H_PRO_VM;
+        }
+        else if ((strncmp(partNumber, "1078904850", 10) == 0) ||
+                 (strncmp(partNumber, "1078904851", 10) == 0) ||
+                 (strncmp(partNumber, "1078904858", 10) == 0) ||
+                 (strncmp(partNumber, "1078904859", 10) == 0))
+        {
+            gd->board_type = ADVA_BOARD_GE112_PRO_VM;
+        }
+        else
+        {
+            gd->board_type = 0;
+        }
+
+        partNumber[SIZEOF_PARTNUM] = '\0';
+
+        printf ("PartNumber: %s\n", partNumber);
+    }
+    else
+    {
+        printf ("PartNumber: %s\n", "unknown");
+    }
 #endif
 
-	return 0;
+    return 0;
 }
+
 
 void ddrmc_init(void)
 {
@@ -339,16 +458,119 @@ int board_late_init(void)
 	fsl_setenv_chain_of_trust();
 #endif
 
+	if (((gd->board_type == ADVA_BOARD_GE114SH_PRO) ||
+	    (gd->board_type == ADVA_BOARD_GE114SH_PRO_MACSEC) ||
+	    (gd->board_type == ADVA_BOARD_GE114CSH_PRO_VM)) &&
+	    (( CPLD_READ(CPLD_SCRATCH0_REG) == POWER) ||
+		 ( CPLD_READ(CPLD_SCRATCH0_REG) == COLD) ||
+		 ( CPLD_READ(CPLD_SCRATCH0_REG) == MACSEC_SWITCH))) 
+	{
+		
+		extern int setup_ds31407 (void);
+		setup_ds31407();
+	}
+
+	return 0;
+}
+#endif
+#if defined(CONFIG_LAST_STAGE_INIT)
+int last_stage_init (void)
+{
+	if ((gd->board_type == ADVA_BOARD_GE114CSH_PRO_VM)  ||
+	    (gd->board_type == ADVA_BOARD_GE114CH_PRO_VM)   ||
+	    (gd->board_type == ADVA_BOARD_GE114H_PRO_VM)    ||
+	    (gd->board_type == ADVA_BOARD_GE114SH_PRO_VM)   ||
+	    (gd->board_type == ADVA_BOARD_GE112_PRO_VM) ) {
+		if (CPLD_READ(CPLD_SCRATCH0_REG) != 1) {
+			printf("SWITCH [RESET]\n"); 
+
+			/* Reset and Take Out of Reset the L2Switch */
+			CPLD_WRITE (CPLD_RESET1_CNTRL_REG, 0xff);
+			udelay (11000);
+			CPLD_WRITE (CPLD_RESET1_CNTRL_REG, 0xbf);
+			udelay (2000000);
+
+			/* Configure L2Switch to CPU interface */
+#if defined(DEFAULT_MII_NAME)
+			static char *devname = DEFAULT_MII_NAME;
+#else
+			static char *devname = CONFIG_TSEC1_NAME;
+#endif
+			// Write data - value
+			if (miiphy_write(devname, 0x10, 0x1, 0xc03d) != 0)			{
+			    printf("Error: unable to write L2Switch(0x10) SMI reg(0x1) Value(0xc003) \n");
+			}
+			
+			// Write address - 4:0 RegAddr, 9:5 DevAddr, 11:10 SMIOp  
+			if (miiphy_write(devname, 0x10, 0x0, 0x96c1) != 0)			{
+			    printf("Error: unable to write L2Switch(0x10) SMI reg(0x0) Value(0x96c1) \n");
+			}
+			printf("SWITCH [READY]\n");
+		}
+
+		/* Configure CPU ETH interface*/
+		writel(0x7105, 0x2d10504);
+		writel(0x1058, 0x2d10020);
+
+		printf("eTSEC1 [READY]\n");
+
+	}
+		
 	return 0;
 }
 #endif
 
+
 #if defined(CONFIG_MISC_INIT_R)
 int misc_init_r(void)
 {
+    uint8_t *macAddrPtr;
+
 #ifdef CONFIG_FSL_DEVICE_DISABLE
 	device_disable(devdis_tbl, ARRAY_SIZE(devdis_tbl));
 #endif
+    if ((gd->board_type == ADVA_BOARD_GE114CSH_PRO_VM) ||
+        (gd->board_type == ADVA_BOARD_GE114CH_PRO_VM)  ||
+        (gd->board_type == ADVA_BOARD_GE114H_PRO_VM)   ||
+        (gd->board_type == ADVA_BOARD_GE114SH_PRO_VM)  ||
+        (gd->board_type == ADVA_BOARD_GE112_PRO_VM) )
+    {
+        if (env_set("VM_PLATFORM", "1") != 0)
+        {
+            puts("Error setting VM_PLATFORM\n");
+        }
+    }   
+  
+    /* Set MAC addresses used by Linux.  The values from the ethaddr and
+    * eth1addr environment variables will be copied into the device tree.
+    */
+    macAddrPtr = phyinv_base_mac();
+    if (macAddrPtr)
+    {   
+    	char macStr[20];
+
+    	sprintf(macStr, "%02x:%02x:%02x:%02x:%02x:%02x",
+    		macAddrPtr[0], macAddrPtr[1], macAddrPtr[2],
+    		macAddrPtr[3], macAddrPtr[4], macAddrPtr[5]);
+
+
+    	/* Set eth0 mac address */
+    	if (env_set("ethaddr", macStr) != 0)
+    	{
+    		puts("Error setting ethaddr\n");
+    	}
+
+    	/*
+    	* The eth1 interface is connected to the FPGA and doesn't need an
+    	* externally visible MAC address.  Set the locally administered bit
+    	* and leave the rest 00's.
+    	*/
+    	if (env_set("eth1addr", "02:00:00:00:00:00") != 0)
+    	{
+    		puts("Error setting ethaddr\n");
+    	}
+    }
+
 	return 0;
 }
 #endif
@@ -361,17 +583,6 @@ void board_sleep_prepare(void)
 #endif
 }
 #endif
-
-int ft_board_setup(void *blob, struct bd_info *bd)
-{
-	ft_cpu_setup(blob, bd);
-
-#ifdef CONFIG_PCI
-	ft_pci_setup(blob, bd);
-#endif
-
-	return 0;
-}
 
 u8 flash_read8(void *addr)
 {
@@ -391,4 +602,275 @@ u16 flash_read16(void *addr)
 
 	return (((val) >> 8) & 0x00ff) | (((val) << 8) & 0xff00);
 }
+
+/******************************************************************************
+ * Initialize ds31407 clock chip
+ *****************************************************************************/
+ 
+#define CPLD_SET_BITS(reg, bits) \
+	 ((volatile unsigned char *)CONFIG_SYS_CPLD_BASE)[reg] |= (bits)
+#define CPLD_CLR_BITS(reg, bits) \
+	 ((volatile unsigned char *)CONFIG_SYS_CPLD_BASE)[reg] &= ~(bits)
+int cpu_dspi_claim_bus(uint bus, uint cs)
+{
+	CPLD_SET_BITS (0x14, (1 << cs));
+	return 0;
+}
+
+void cpu_dspi_release_bus(uint bus, uint cs)
+{
+	CPLD_CLR_BITS (0x14, (1 << cs));
+}
+
+static struct {
+	unsigned int reg;
+	unsigned char val;
+} ds31407_init_table[] = {
+#include "ds31407.inc"
+	{ 0xffff, 0xff }
+};
+
+int setup_ds31407 (void)
+{
+	struct udevice *spidev;
+	struct spi_slave *slave;
+	unsigned int bus = 1;
+	unsigned int cs = 0;
+	unsigned int mode = SPI_MODE_0;
+	int ret = -1;
+	int tmp;
+	int i;
+	unsigned char dout[3];
+	unsigned char din[3];
+
+	ret = 0;
+	dout[0] = 0x80; // read
+	dout[1] = 0x00; // single
+		
+	/* Reset the chip */
+	CPLD_SET_BITS (CPLD_RESET0_CNTRL_REG, CPLD_RESET0_CNTRL_DS310X);
+	udelay (1);
+	CPLD_CLR_BITS (CPLD_RESET0_CNTRL_REG, CPLD_RESET0_CNTRL_DS310X);
+	udelay (150);
+
+	ret = spi_get_bus_and_cs(bus, cs, 1000000, mode, "spi_generic_drv", "spidev@0", &spidev, &slave);
+	if (ret)
+	{
+		printf("spi get bus %d cs %d failed!\n", bus, cs);
+		return ret;
+	}
+	ret = spi_claim_bus(slave);
+	if (ret)
+	{
+		printf("claim spi bus failed!\n");
+		return 0;
+	}
+	
+	tmp = spi_xfer(slave, 24, dout, din, SPI_XFER_BEGIN | SPI_XFER_END);
+	if (tmp) {
+		ret = -EIO;
+	}else if ((din[2] != 0xaf)) {
+		printf ("spi_xfer data in:%x %x %x, hope 0xaf !!\n... ", din[0],din[1],din[2]);
+		ret = -ENOENT;
+	}
+	spi_release_bus(slave);
+
+	for (i = 0; !ret && (ds31407_init_table[i].reg != 0xFFFF); i++)
+	{
+		dout[0] = (ds31407_init_table[i].reg >> 7) & 0x7F;
+		dout[1] = (ds31407_init_table[i].reg << 1) & 0xFE;
+		dout[2] = ds31407_init_table[i].val;
+
+		spi_claim_bus(slave);
+
+		if (spi_xfer(slave, 24, dout, NULL, SPI_XFER_BEGIN | SPI_XFER_END) != 0)
+		{
+			ret = -1;
+		}
+
+		udelay(100);
+		spi_release_bus(slave);
+	}
+
+	return ret;
+}
+
+/******************************************************************************
+ * Flat Device Tree setup for the board.
+ * Called when prepairing to boot Linux kernel for patching the device tree.
+ *****************************************************************************/
+#if defined(CONFIG_OF_BOARD_SETUP)
+void ft_fix_spi(void *fdt)
+{
+	int node;
+	const char *dspi_path, *sspi_path;
+
+	node = fdt_path_offset(fdt, "/aliases");
+	if (node < 0)
+		return;
+
+	dspi_path = fdt_getprop(fdt, node, "dspi", NULL);
+	if (!dspi_path) {
+		debug("No alias for %s\n", "dspi");
+		return;
+	}
+	
+	sspi_path = fdt_getprop(fdt, node, "sspi", NULL);
+	if (!sspi_path) {
+		debug("No alias for %s\n", "sspi");
+		return;
+	}
+
+	do_fixup_by_path(fdt, dspi_path, "status", "disabled", 9, 0);
+	do_fixup_by_path(fdt, sspi_path, "status", "okay", 5,0);
+
+}
+
+int ft_board_setup (void *fdt, struct bd_info *bd)
+{
+	unsigned char np_fixed_link[] = {0,0,0,2,0,0,0,1,0,0,0x03,0xe8,0,0,0,0,0,0,0,0};
+	ft_cpu_setup(fdt, bd);
+
+	/*
+	* Add console baudrate to bootargs if not specified
+	*/
+	int nodeoffset = fdt_path_offset(fdt, "/chosen");
+	if (nodeoffset >= 0)
+	{
+		const char* path;
+		const char* substr;
+
+		path = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
+		if ((path != NULL) && ((substr = strstr(path, "console=ttyS0"))))
+		{
+			substr += 13; /* length of "console=ttyO0" */
+			if (*substr != ',')
+			{
+				size_t len;
+				char* newpath;
+				uint32_t baud;
+				const char* baudstr;
+				int err;
+
+				baudstr = env_get("baudrate");
+				baud = (baudstr) ? simple_strtol(baudstr, NULL, 10) : 9600;
+				if ((baud < 300) || (baud > 115200))
+				{
+					baud = 9600;
+				}
+
+				len = strlen(path);
+				newpath = malloc(len + 25);
+
+				strcpy(newpath, path);
+				sprintf(newpath + (substr - path), ",%dn8", baud);
+				if (*substr)
+				{
+					strcat(newpath, substr);
+				}
+
+				err = fdt_setprop(fdt, nodeoffset, "bootargs", newpath, strlen(newpath)+1);
+				if (err < 0)
+				{
+					printf("WARNING: could not set bootargs %s.\n", fdt_strerror(err));
+				}
+
+				free(newpath);
+			}
+		}
+	}
+	if ((gd->board_type == ADVA_BOARD_GE112_PRO) ||
+          (gd->board_type == ADVA_BOARD_MINI_CPE))
+	{
+		do_fixup_by_compat(fdt, "fsl,rt-etsec2", "fixed-link",&np_fixed_link,20,0);
+	}
+
+	if ((gd->board_type == ADVA_BOARD_GE114SH_PRO) ||
+	    (gd->board_type == ADVA_BOARD_GE114SH_PRO_MACSEC) ||
+	    (gd->board_type == ADVA_BOARD_GE114_PRO_MACSEC) ||
+	    (gd->board_type == ADVA_BOARD_GE114CSH_PRO_VM) ||
+	    (gd->board_type == ADVA_BOARD_GE114CH_PRO_VM))
+	{
+		struct ccsr_gur __iomem *gur = (void *)(CONFIG_SYS_FSL_GUTS_ADDR);
+		unsigned int svr;
+
+		svr = in_be32(&gur->svr);
+		if ((svr & 0x000000ff) <= 0x10) 
+		{
+			ft_fix_spi(fdt);
+		}
+	}
+
+    if( (gd->board_type == ADVA_BOARD_GE114CSH_PRO_VM) ||
+        (gd->board_type == ADVA_BOARD_GE114CH_PRO_VM) ||
+        (gd->board_type == ADVA_BOARD_GE114H_PRO_VM) ||
+        (gd->board_type == ADVA_BOARD_GE114SH_PRO_VM) ||
+        (gd->board_type == ADVA_BOARD_GE112_PRO_VM))
+    {
+        int nodeoffset = fdt_path_offset(fdt, "/");
+        fdt_setprop(fdt, nodeoffset, "model", "LS102XGE110PROVME", 18);
+    }
+
+	/* Now about to boot the kernel so set status LED blinking green. */
+	CPLD_CLRSET_BITS (CPLD_STATUS_LED_REG, CPLD_STATUS_LED_RED,
+		CPLD_STATUS_LED_GREEN | CPLD_STATUS_LED_BLINK);
+
+	return 0;
+}
+#endif
+
+void reset_phy(void)
+{
+    if ((gd->board_type != ADVA_BOARD_GE114CSH_PRO_VM) &&
+        (gd->board_type != ADVA_BOARD_GE114CH_PRO_VM) &&
+        (gd->board_type != ADVA_BOARD_GE114H_PRO_VM) &&
+        (gd->board_type != ADVA_BOARD_GE114SH_PRO_VM) &&
+        (gd->board_type != ADVA_BOARD_GE112_PRO_VM) )
+    {
+        /* Reset the chip */
+        CPLD_SET_BITS (CPLD_RESET1_CNTRL_REG, CPLD_RESET1_CNTRL_PHY);
+        udelay (1);
+        CPLD_CLR_BITS (CPLD_RESET1_CNTRL_REG, CPLD_RESET1_CNTRL_PHY);
+        udelay (10);
+    }
+}
+
+void _reset_cpu(ulong addr)
+{
+    CPLD_WRITE(0x30, 9);
+}
+
+void  board_detail(void)
+{
+    printf("%-12s= 0x%08x\n", "nor base", CONFIG_SYS_FLASH_BASE);
+    printf("%-12s= 0x%08x\n", "nand base", CONFIG_SYS_NAND_BASE);
+    printf("%-12s= 0x%08x\n", "fpga base",CONFIG_SYS_FPGA_BASE);
+    printf("%-12s= 0x%08x\n", "cpld base",CONFIG_SYS_CPLD_BASE);
+}
+
+int board_reboot(int flag)
+{
+	if (flag == 1)
+	{
+  		CPLD_WRITE(CPLD_CARD_RESET_CNTRL_REG,
+			CPLD_CARD_RESET_CNTRL_COLD);
+		udelay(200);
+		CPLD_WRITE(CPLD_CARD_RESET_CNTRL_REG,
+			CPLD_CARD_RESET_CNTRL_COLD | CPLD_CARD_RESET_CNTRL_ENA);
+		udelay(5000000);
+ 	}
+	else
+	{
+ 		CPLD_WRITE(CPLD_CARD_RESET_CNTRL_REG,
+			CPLD_CARD_RESET_CNTRL_POR);
+		udelay(200);
+		CPLD_WRITE(CPLD_CARD_RESET_CNTRL_REG,
+			CPLD_CARD_RESET_CNTRL_POR | CPLD_CARD_RESET_CNTRL_ENA);
+		udelay(5000000);
+	}
+
+	/*NOTREACHED*/
+	return 0;
+}
+
 
