@@ -21,11 +21,12 @@
  */
 
 #include <common.h>
+#include <command.h>
 
 int mmcBootQuiet = 0;
 
 static int
-do_bootmmc (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_bootmmc (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	int rc;
 

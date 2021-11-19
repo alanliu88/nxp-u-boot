@@ -22,7 +22,6 @@
 #include <common.h>
 #include <command.h>
 #include <i2c.h>
-#include <environment.h>
 #include <linux/ctype.h>
 #include <cli.h>
 #ifdef CONFIG_SYS_HUSH_PARSER
@@ -47,7 +46,7 @@ void board_reboot(unsigned long type)
 /* reboot - Reboot the system */
 /*******************************************************************/
 static int
-do_reboot (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_reboot (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc == 2)
 	{
@@ -81,7 +80,7 @@ U_BOOT_CMD (reboot, 2, 0, do_reboot,
 /* boot - boot the system */
 /*******************************************************************/
 #if !defined(CONFIG_CMD_BOOTD)
-int do_bootd (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_bootd (struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
 	int rcode = 0;
 

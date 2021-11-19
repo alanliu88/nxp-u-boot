@@ -4,7 +4,7 @@ config SYS_BOARD
 	default "ge104"
 
 config SYS_VENDOR
-	default "ADVA"
+	default "adva"
 
 config SYS_SOC
 	default "fsl-layerscape"
@@ -76,6 +76,6 @@ config PFE_EMAC2_PHY_ADDR
 endif
 
 source "board/freescale/common/Kconfig"
-source "board/ADVA/common/Kconfig"
+source "board/adva/common/Kconfig"
 
 endif

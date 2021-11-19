@@ -51,7 +51,7 @@ setup_addr(op_t op, unsigned short reg, unsigned char *data, int len)
 }
 
 int
-spi_access (   cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+spi_access (   struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	char            *cmd;
 	int             cmdlen;
@@ -219,7 +219,7 @@ done:
 
 #if defined(CONFIG_ADVA_DS310X)
 int
-do_ds310x (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_ds310x (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	spi_cs = 0;
 	return spi_access (cmdtp, flag, argc, argv);
@@ -235,7 +235,7 @@ U_BOOT_CMD (ds310x, 4, 1, do_ds310x,
 
 #if defined(CONFIG_ADVA_DS26521)
 int
-do_ds26521 (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_ds26521 (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	spi_cs = 1;
 	return spi_access (cmdtp, flag, argc, argv);
@@ -251,7 +251,7 @@ U_BOOT_CMD (ds26521, 4, 1, do_ds26521,
 
 #if defined(CONFIG_ADVA_DS31408)
 int
-do_ds31408 (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_ds31408 (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	spi_cs = CONFIG_ADVA_DS31408_CS;
 	return spi_access (cmdtp, flag, argc, argv);
@@ -267,7 +267,7 @@ U_BOOT_CMD (ds31408, 4, 1, do_ds31408,
 
 #if defined(CONFIG_ADVA_DS31407)
 int
-do_ds31407(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_ds31407(struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	spi_cs = CONFIG_ADVA_DS31407_CS;
     return spi_access (cmdtp, flag, argc, argv);
@@ -283,7 +283,7 @@ U_BOOT_CMD (ds31407, 5, 1, do_ds31407,
 #endif
 
 #if defined(CONFIG_ADVA_SPI_RAM)
-static int spi_mem_mw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int spi_mem_mw(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
 	unsigned char   op;
 	unsigned short  addr;
@@ -410,7 +410,7 @@ done:
 }
 
 int
-do_spiram (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_spiram (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
 	spi_cs = CONFIG_ADVA_SPI_RAM_CS;

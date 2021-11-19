@@ -20,6 +20,7 @@
 
 #include <common.h>
 #include <i2c.h>
+#include <linux/delay.h>
 
 #include "lptm21.h"
 

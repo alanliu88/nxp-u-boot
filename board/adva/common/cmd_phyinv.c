@@ -22,6 +22,7 @@
 #include <common.h>
 #include <command.h>
 #include <i2c.h>
+#include <asm/global_data.h>
 
 #include "phyinv.h"
 #include "cpld.h"
@@ -244,7 +245,7 @@ phyinv_update(struct phyInv_t* phyInv, char* token, char* val)
 
 
 int
-do_dumpPhyInv (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_dumpPhyInv (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	struct phyInv_t_page0 phyInvPage0;
 	struct phyInv_t_page1 phyInvPage1;
@@ -263,7 +264,7 @@ do_dumpPhyInv (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 }
 
 int
-do_cmdPhyInv (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_cmdPhyInv (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
 	char str[64];

@@ -132,7 +132,7 @@ void i2c_busy_recovery(void)
 	writel(dirval, GPIO1_DIR_REG);
 }
 
-int do_i2c_recovery (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+int do_i2c_recovery (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
 	i2c_busy_recovery();
 

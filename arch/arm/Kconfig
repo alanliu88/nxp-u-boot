@@ -2057,8 +2057,8 @@ source "board/variscite/dart_6ul/Kconfig"
 source "board/vscom/baltos/Kconfig"
 source "board/phytium/durian/Kconfig"
 source "board/xen/xenguest_arm64/Kconfig"
-source "board/ADVA/ge104/Kconfig"
-source "board/ADVA/ge110pro/Kconfig"
+source "board/adva/ge104/Kconfig"
+source "board/adva/ge110pro/Kconfig"
 
 source "arch/arm/Kconfig.debug"
 

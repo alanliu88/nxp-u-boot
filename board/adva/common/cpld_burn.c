@@ -19,6 +19,8 @@
  */
 
 #include <common.h>
+#include <command.h>
+#include <asm/global_data.h>
 #include <asm/io.h>
 #include <i2c.h>
 #include "console.h"
@@ -721,7 +723,7 @@ static int32_t cpld_set_user_id(struct udevice* dev, uint32_t id)
 	return rc;
 }
 
-static int do_cpld(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_cpld(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	uint8_t           mode;
 	flash_sector_t    sector;

@@ -133,8 +133,8 @@ static const char* simple_cmds[] = {
 /*
  * Command filter hook called within common/command.c
  */
-cmd_tbl_t *
-board_check_cmd (cmd_tbl_t *p, int help)
+struct cmd_tbl *
+board_check_cmd (struct cmd_tbl *p, int help)
 {
     char **cmds;
 
@@ -204,7 +204,7 @@ set_board_debug (int val)
  * to the full command set.
  */
 static int
-do_debug (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_debug (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
     if (board_debug < 0)
     {
@@ -247,7 +247,7 @@ do_debug (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD (debug, 3, 0, do_debug, NULL, NULL);
 
 static int
-do_fips (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_fips (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
     int len = 0;
     char buf[256];

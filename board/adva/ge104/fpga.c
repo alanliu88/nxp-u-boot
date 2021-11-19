@@ -189,7 +189,7 @@ void program_fpga(uint8_t* data, int len )
 	cpld_write(FPGA_CONFIG_CTRL, PROGRAM_B);
 }
 
-static int fpgaload_cmd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int fpgaload_cmd(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *end;
 	uint8_t* data_ptr = 0;

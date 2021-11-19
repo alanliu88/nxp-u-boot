@@ -19,6 +19,8 @@
  */
 
 #include <common.h>
+#include <command.h>
+#include <asm/global_data.h>
 #include <asm/io.h>
 #include <i2c.h>
 #include "console.h"
@@ -152,7 +154,7 @@ static int cpld_reg_write_masked(struct udevice *dev, int argc, char * const arg
 }
 
 /***************************************************************/
-static int do_cpld(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_cpld(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
     int ret = 0;
     struct udevice* i2cdev = 0;

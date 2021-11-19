@@ -25,7 +25,7 @@
 #define BLOCK_SIZE  0xa00000
 
 static int
-do_burnmmc (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_burnmmc (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
     int rc = 0;
 	loff_t offset = 0;

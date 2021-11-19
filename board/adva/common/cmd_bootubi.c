@@ -21,11 +21,13 @@
  */
 
 #include <common.h>
+#include <command.h>
+#include <linux/stringify.h>
 
 int ubiBootQuiet = 0;
 
 static int
-do_bootubi (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+do_bootubi (struct cmd_tbl * cmdtp, int flag, int argc, char * const argv[])
 {
     int rc;
 
