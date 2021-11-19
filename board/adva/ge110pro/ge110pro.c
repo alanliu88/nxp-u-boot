@@ -29,7 +29,6 @@
 #include <fsl_devdis.h>
 #include <spl.h>
 #include <linux/delay.h>
-//#include "../common/sleep.h"
 #ifdef CONFIG_U_QE
 #include <fsl_qe.h>
 #endif
@@ -96,7 +95,7 @@ int checkboard(void)
     char testEndian[]="\x11\x22\x33\x44";
 
     printf("%s Endian Mode\n",(((*((unsigned long*)testEndian))==0x11223344)?"Big":"Little"));
-    printf("TestEndian is %x [%x][%x][%x][%x]\n",*((unsigned long*)testEndian),testEndian[0],testEndian[1],testEndian[2],testEndian[3]);
+    printf("TestEndian is %lx [%x][%x][%x][%x]\n",*((unsigned long*)testEndian),testEndian[0],testEndian[1],testEndian[2],testEndian[3]);
 
     i2cdev = get_i2c_inv_dev(0);
     if (i2cdev == 0) {
@@ -280,7 +279,7 @@ void ddrmc_init(void)
 int dram_init(void)
 {
 #if (!defined(CONFIG_SPL) || defined(CONFIG_SPL_BUILD))
-	ddrmc_init();
+	//ddrmc_init();
 #endif
 
 	erratum_a008850_post();

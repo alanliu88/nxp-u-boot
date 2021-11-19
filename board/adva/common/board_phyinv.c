@@ -22,6 +22,8 @@
 #include <common.h>
 #include <malloc.h>
 #include <i2c.h>
+#include <asm/byteorder.h>
+#include <linux/delay.h>
 
 #include "phyinv.h"
 

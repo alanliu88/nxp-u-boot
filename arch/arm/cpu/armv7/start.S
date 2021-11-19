@@ -49,6 +49,7 @@ save_boot_params_ret:
 	beq	switch_to_hypervisor
 switch_to_hypervisor_ret:
 #endif
+	setend  le
 	/*
 	 * disable interrupts (FIQ and IRQ), also set the cpu to SVC32 mode,
 	 * except if in HYP mode already
